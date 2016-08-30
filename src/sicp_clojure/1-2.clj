@@ -149,4 +149,67 @@
 ;;  .   .     .  .
 ;;   .>.       ..
 
-;; This computation grows exponentially in terms, but minimizes memory usage.
+;; This computation grows exponentially in terms, but minimizes memory usage. In
+;; contrast, the iterative solution produces a result that is proportional to
+;; the size of N, rather than exponential:
+
+(defn fib2
+  [n]
+  (if (< n 1)
+    0
+    (loop [a 1
+           b 1
+           i 1]
+      (if (= i n)
+        a
+        (recur b (+ a b) (inc i))))))
+
+(def fib-memoized (memoize fib2))
+
+;; This does not mean that tree recursion is never useful, it is a natural and
+;; powerful tool.
+
+;; In some cases, however, there is no alternative to tree recursion. Consider,
+;; for example, counting change. How many different ways can we make change for
+;; $1.00, given half-dollars, quarters, dimes, nickels, and pennies.
+
+;; We can reason about the solution to the problem as two cases:
+;;   a. number of ways to change `a' using all but the first kind of coin, plus
+;;   b. number of ways to change amount `a - d' using all `n' kinds of coins,
+;;      where d is the denomination of the first kind of coin
+
+;; This is because the solution can be divided between those that use the first
+;; kind of coin and those that do not. Thus, we can recursively reduce the
+;; problem of changing a given amount to the problem of changing smaller amounts
+;; using fewer kinds of coins.
+
+;; Here is the algorithm:
+;;   * if `a' is exactly 0, we should count that as 1 way to make change.
+;;   * If `a' is less than 0, we should count that as 0 ways to make change.
+;;   * If `n' is 0, we should count that as 0 ways to make change.
+
+(defn first-denomination
+  [kinds-of-coins]
+  (cond (= kinds-of-coins 1) 1
+        (= kinds-of-coins 2) 5
+        (= kinds-of-coins 3) 10
+        (= kinds-of-coins 4) 25
+        (= kinds-of-coins 5) 50))
+
+(defn cc
+  [amount kinds-of-coins]
+  (cond (= amount 0) 1
+        (or (< amount 0) (= kinds-of-coins 0)) 0
+         :else (+ (cc amount
+                      (dec kinds-of-coins))
+                  (cc (- amount (first-denomination kinds-of-coins))
+                      kinds-of-coins))))
+
+(defn count-change [amount]
+  (cc amount 5))
+
+;; The observation that a tree-recursive proces maybe highly inefficient but
+;; often easy to specify and understand has let people to propose that one could
+;; get the best of both worlds by designing a "smart compiler" that could
+;; transform tree-recursive procedures into more efficient procedures that
+;; compute the same result.
