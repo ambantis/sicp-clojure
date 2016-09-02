@@ -12,7 +12,6 @@
 
 ;; We begin by considering the factorial function using a linear recursive process:
 
-
 (defn fact1
   "Return Factorial using recursive process"
   [n]
@@ -55,13 +54,11 @@
 ;; (fact-iter 720 7 6)  V
 ;; 720
 
-
 ;; The two functions evaluate to the same result, but using very different
 ;; shapes. The recursive process builds up a chain of deferred computations. In
 ;; order to know the state, you need to understand the state of the stack. In
 ;; contrast, with an iterative shape, the accumulated state of the computation
 ;; is state (or a parameter) of the function.
-
 
 ;; Exercise 1.9: Each of the following two procedures defines a method for
 ;; adding two positive integres in terms of the procedures `inc', which
@@ -128,7 +125,7 @@
     :else (+ (fib1 (- n 1)) (fib1 (- n 2)))))
 
 ;; While this function is illustrative of tree recursion, it is a terrible way
-;; to compute the Fibonacci sequence becuase there is so much redundant
+;; to compute the Fibonacci sequence because there is so much redundant
 ;; computation. Consider:
 
 ;;                    ..<............ fib5   <..........
@@ -142,7 +139,7 @@
 ;;  ..       / . . \   .  .   /  . \   .  .   / .  \   .  . 1 .
 ;; .      fib2 . . fib1.  .fib1 .  fib0 . .fib1. . fib0 .  .  .
 ;; .      /  \  . . |  .  . |  .  . |   . . |   . . |   .   .>
-;; V     /  . \   . 1  .  . 1  .  . 0  .  . 1  .  . 0  ..
+;; .     /  . \   . 1  .  . 1  .  . 0  .  . 1  .  . 0  ..
 ;; .  fib1 .. fib0..  .   .   .   .   .   V   .   ..  .
 ;; .   |  .  . |  . .>     .>.     . .    ..>.      .>
 ;; .   1 .   . 0  .
@@ -200,10 +197,10 @@
   [amount kinds-of-coins]
   (cond (= amount 0) 1
         (or (< amount 0) (= kinds-of-coins 0)) 0
-         :else (+ (cc amount
-                      (dec kinds-of-coins))
-                  (cc (- amount (first-denomination kinds-of-coins))
-                      kinds-of-coins))))
+        :else (+ (cc amount
+                     (dec kinds-of-coins))
+                 (cc (- amount (first-denomination kinds-of-coins))
+                     kinds-of-coins))))
 
 (defn count-change [amount]
   (cc amount 5))
@@ -213,3 +210,70 @@
 ;; get the best of both worlds by designing a "smart compiler" that could
 ;; transform tree-recursive procedures into more efficient procedures that
 ;; compute the same result.
+
+;; Exercise 1.11: A function `f' is defined by the rule that f(n) = n if n < 3
+;; and f(n) = f(n-1) + 2f(n-2) + 3f(n-3) if n >= 3. Write a procedure that
+;; computes `f' by means of a recursive process. Write a procedures that
+;; computes `f' by means of an iterative process.
+
+(defn f-recursive
+  [n]
+  (if (< n 3)
+    n
+    (+ (* 1 (f-recursive (- n 1)))
+       (* 2 (f-recursive (- n 2)))
+       (* 3 (f-recursive (- n 3))))))
+
+(defn f-iterative
+  [n]
+  (if (< n 3)
+    n
+    (loop [acc '(2 1 0)
+           i 2]
+      (if (= i n)
+        (first acc)
+        (let [f1 (nth acc 0)
+              f2 (nth acc 1)
+              f3 (nth acc 2)
+              next (+ (* 1 f1)
+                      (* 2 f2)
+                      (* 3 f3))]
+          (recur (conj acc next)
+                 (inc i)))))))
+
+;; Exercise 1.12: The following pattern of numbers is called "Pascal's
+;; triangle".
+
+;;              1
+;;            1   1
+;;          1   2   1
+;;        1   3   3   1
+;;      1   4   6   4   1
+
+;; The numbers at the edge of the triangle are all 1, and each number inside the
+;; triangle is the sum of the two numbers above it. Write a procedure that
+;; computes elements of Pascal's triangle by means of a recursive process
+
+(defn- private-pascal-next
+  "Return next row of Pascal's Triangle, given seq of current row"
+  [row]
+  (loop [acc (list 1)
+         rem row]
+    (let [[a b] rem]
+      (if (nil? b)
+        (conj acc 1)
+        (recur (conj acc (+ a b)) (rest rem))))))
+
+(defn pascal
+  "Return Pascal's Triangle with `n' rows, as a list of lists'"
+  [n]
+  (cond (< n 1) ()
+        (= n 1) (list (list 1))
+        :else (let [[base :as triangle] (pascal (dec n))]
+                (conj triangle (private-pascal-next base)))))
+
+(defn print-pascal
+  "Print Pascal's Triangle with `n' rows'"
+  [n]
+  (doseq [row (reverse (pascal n))] (println (clojure.string/join " " row))))
+
