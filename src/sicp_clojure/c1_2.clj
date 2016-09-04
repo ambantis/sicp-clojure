@@ -1,5 +1,5 @@
-(ns sicp-clojure.1-2
-  (:gen-class))
+(ns sicp-clojure.c1-2
+  (:require [sicp-clojure.c1-1 :as c1-1]))
 
 ;;;; 1.2 Procedures and the Processes They Generate
 

@@ -1,5 +1,4 @@
-(ns sicp-clojure.1-1
-  (:gen-class))
+(ns sicp-clojure.c1-1)
 
 ;;;; 1.1 The Elements of Programming
 
