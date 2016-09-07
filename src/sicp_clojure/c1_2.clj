@@ -326,3 +326,190 @@
 ;; approach infinity, but resulting in a stack overflow execption before that
 ;; occurs.
 
+;;; 1.2.4 Exponentiation
+
+;; Consider the problem of computing the exponential of a given number. We would
+;; like a procedure that takes as arguments a base b and a positive integer
+;; exponent n and computes b^n. One way is a recursive definition
+
+(defn exp-recursive [b n]
+  (if (zero? n)
+    1
+    (* b (exp-recursive b (dec n)))))
+
+;; This is a linear recursive process, which requires [theta](n) steps
+;; and [theta](n) space. It is possible to come up with a linear iteration
+;; equivalent that requires [theta](n) steps and [theta] space.
+
+(defn exp-iterative [b n]
+  (loop [acc 1
+         i n]
+    (if (zero? i)
+      acc
+      (recur (* acc b)
+             (dec i)))))
+
+;; It is possible to compute exponentials with fewer steps by using successive
+;; squaring. For example, instead of multiplying eight times:
+
+;; (* b (* b (* b (* b (* b (* b (* b (* b))))))))
+
+;; we can do fewer steps:
+
+;; b^4 * b^4
+
+(defn fast-exp-recursive [b n]
+  (cond (zero? n) 1
+        (even? n) (c1-1/square (fast-exp-recursive b (/ n 2)))
+
+        :else (* b (fast-exp-recursive b (dec n)))))
+
+;; The performance difference with smaller exponents is similar:
+;;
+;; (time (exp-recursive 2 62))
+;; "Elapsed time: 0.105028 msecs"
+;; 4611686018427387904
+;; sicp-clojure.c1-2> (time (fast-exp 2 62))
+;; "Elapsed time: 0.101819 msecs"
+;; 4611686018427387904
+
+;; But with larger exponents, it is indeed much faster:
+
+;; sicp-clojure.c1-2=> (time (exp-iterative 1 1000000))
+;; "Elapsed time: 57.59865 msecs"
+;; 1
+;; sicp-clojure.c1-2=> (time (fast-exp 1 10000000000))
+;; "Elapsed time: 0.085058 msecs"
+;; 1
+
+;; The difference between [theta](log n) and [theta](n) growth becomes striking
+;; as n becomes large.
+
+;; Exercise 1.16: Design a procedure that evolves an iterative exponentiation
+;; process that uses successive squaring and uses a logarithmic number of steps,
+;; as does `fast-expt'.  (Hint: Using the observation that (b^(n/2))^2 =
+;; (b^2)^(n/2), keep, along with the exponent n and the base b, an additional
+;; state variable a, and define the state transformation in such a way that the
+;; product a b^n is unchanged from state to state.  At the beginning of the
+;; process a is taken to be 1, and the answer is given by the value of a at the
+;; end of the process.  In general, the technique of defining an "invariant
+;; quantity" that remains unchanged from state to state is a powerful way to
+;; think about the design of iterative algorithms.)
+
+(defn fast-exp-iterative [b n]
+  (if (zero? n)
+    1
+    (let [[extra start-exponent] (if (even? n)
+                                   [1 n]
+                                   [b (dec n)])]
+      (println "extra = " extra ", start-exp = " start-exponent)
+      (loop [acc b
+             rem start-exponent]
+        (println "looping acc = " acc ", rem = " rem)
+        (if (= rem 1)
+          (*' acc extra)
+          (recur (c1-1/square acc) (/ rem 2)))))))
+
+(defn fast-exp-iterative [b n]
+  (if (zero? n)
+    1
+    (loop [acc b
+           rem n
+           extra 1]
+      (cond (= rem 1) (* acc extra)
+            (even? rem) (recur (c1-1/square acc)
+                               (/ rem 2)
+                               extra)
+            :else (recur acc
+                         (dec rem)
+                         (* extra b))))))
+
+
+;; Exercise 1.17: The exponentiation algorithms in this section are based on
+;; performing exponentiation by means of repeated multiplication.  In a similar
+;; way, one can perform integer multiplication by means of repeated addition.
+;; The following multiplication procedure (in which it is assumed that our
+;; language can only add, not multiply) is analogous to the `expt' procedure:
+
+;;      (define (* a b)
+;;        (if (= b 0)
+;;            0
+;;            (+ a (* a (- b 1)))))
+
+;; This algorithm takes a number of steps that is linear in `b'.  Now suppose we
+;; include, together with addition, operations `double', which doubles an
+;; integer, and `halve', which divides an (even) integer by 2.  Using these,
+;; design a multiplication procedure analogous to `fast-expt' that uses a
+;; logarithmic number of steps.
+
+(defn- private-double [n]
+  (+ n n))
+
+(defn- private-halve [n]
+  (/ n 2))
+
+(defn- private-half?
+  "Return true if `a' is half of `b'"
+  [a b]
+  (= (private-double a) b))
+
+(defn fast-mult-recursive [a b]
+  (if (or (zero? a) (zero? b))
+    0
+    (cond (= b 1) a
+          (even? b) (fast-mult-recursive (private-double a)
+                                         (private-halve b))
+          :else (+ a (fast-mult-recursive a (dec b))))))
+
+;; *Exercise 1.18:* Using the results of *Note Exercise 1-16:: and Note Exercise
+;; *1-17::, devise a procedure that generates an ;; iterative process for
+;; *multiplying two integers in terms of adding, ;; doubling, and halving and
+;; *uses a logarithmic number of steps.(4)
+
+(defn fast-mult-iterative [a b]
+  (if (or (zero? a) (zero? b))
+    0
+    (loop [acc a
+           rem b
+           rest 0]
+      (cond (= rem 1) (+ acc rest)
+            (even? rem) (recur (private-double acc)
+                               (private-halve rem)
+                               rest)
+            :else (recur acc
+                         (dec rem)
+                         (+ acc rest))))))
+
+;; Exercise 1.19: There is a clever algorithm for computing the Fibonacci
+;; numbers in a logarithmic number of steps.  Recall the transformation of the
+;; state variables a and b in the `fib-iter' process of section *Note 1-2-2:::
+;; a <- a + b and b <- a.  Call this transformation T, and observe that
+;; applying T over and over again n times, starting with 1 and 0, produces the
+;; pair _Fib_(n + 1) and _Fib_(n).  In other words, the Fibonacci numbers are
+;; produced by applying T^n, the nth power of the transformation T, starting
+;; with the pair (1,0).  Now consider T to be the special case of p = 0 and q =
+;; 1 in a family of transformations T_(pq), where T_(pq) transforms the pair
+;; (a,b) according to a <- bq + aq + ap and b <- bp + aq.  Show that if we
+;; apply such a transformation T_(pq) twice, the effect is the same as using a
+;; single transformation T_(p'q') of the same form, and compute p' and q' in
+;; terms of p and q.  This gives us an explicit way to square these
+;; transformations, and thus we can compute T^n using successive squaring, as
+;; in the `fast-expt' procedure.  Put this all together to complete the
+;; following procedure, which runs in a logarithmic number of steps:(5)
+
+;;      (define (fib n)
+;;        (fib-iter 1 0 0 1 n))
+
+;;      (define (fib-iter a b p q count)
+;;        (cond ((= count 0) b)
+;;              ((even? count)
+;;               (fib-iter a
+;;                         b
+;;                         <??>      ; compute p'
+;;                         <??>      ; compute q'
+;;                         (/ count 2)))
+;;              (else (fib-iter (+ (* b q) (* a q) (* a p))
+;;                              (+ (* b p) (* a q))
+;;                              p
+;;                              q
+;;                              (- count 1)))))
