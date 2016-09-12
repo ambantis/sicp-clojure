@@ -518,3 +518,50 @@
                          p
                          q
                          (dec rem))))))
+
+;;; 1.2.5 Greatest Common Divisors (GCD)
+
+;; The GCD of two integers a and b is defined to be the largest integer that
+;; divides both a and b with no remainder. For example, the GCD of 16 28 is
+;; 4. One way to find the GCD of two numbers is to factor them and search for
+;; common factors, but there is another way that is far more efficient.
+
+;; Euclid's Algorithm is based on the observation that given a remainder r of a
+;; divided by b, then the common divisors of a and b is the same as b and
+;; r. Thus: GCD(a,b) = GCD(b,r)
+
+(defn gcd
+  "Return Greatest Common Divisor using Eulid's Algorithm
+  https://en.wikipedia.org/wiki/Euclidean_algorithm"
+  [a b]
+  (if (zero? b)
+    a
+    (recur b
+           (rem a b))))
+
+;; This generates an iterative process, whose number of steps grows as the
+;; logarithm of the numbers involved.
+
+;; Knuth's version of Lame's Theorem:
+;;
+;; For n >= 1, and integers a & b, such that a > b > 0, where n is the number of
+;; steps to find the GCD of a b using Euclid's Algorithm, then the smaller
+;; number in the pair must be less than or equal to the nth Fibonacci number.
+
+;; We can use this theorem to get an order-of-growth estimate for Euclid's
+;; Algorithm.  Let n be the smaller of the two inputs to the procedure.  If the
+;; process takes k steps, then we must have n>= _Fib_(k) approx
+;; [phi]^k/[sqrt](5).  Therefore the number of steps k grows as the logarithm
+;; (to the base [phi]) of n.  Hence, the order of growth is [theta](`log' n).
+
+;; Exercise 1.20: The process that a procedure generates is of course dependent
+;; on the rules used by the interpreter.  As an example, consider the iterative
+;; `gcd' procedure given above.  Suppose we were to interpret this procedure
+;; using normal-order evaluation, as discussed in section *Note 1-1-5::.  (The
+;; normal-order-evaluation rule for `if' is described in *Note Exercise 1-5::.)
+;; Using the substitution method (for normal order), illustrate the process
+;; generated in evaluating `(gcd 206 40)' and indicate the `remainder'
+;; operations that are actually performed.  How many `remainder' operations are
+;; actually performed in the normal-order evaluation of `(gcd 206 40)'?  In the
+;; applicative-order evaluation?
+
