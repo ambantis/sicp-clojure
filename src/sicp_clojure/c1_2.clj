@@ -482,7 +482,7 @@
 
 ;; Exercise 1.19: There is a clever algorithm for computing the Fibonacci
 ;; numbers in a logarithmic number of steps.  Recall the transformation of the
-;; state variables a and b in the `fib-iter' process of section *Note 1-2-2:::
+;; state variables a and b in the `fib-iter' process of section 1-2-2
 ;; a <- a + b and b <- a.  Call this transformation T, and observe that
 ;; applying T over and over again n times, starting with 1 and 0, produces the
 ;; pair _Fib_(n + 1) and _Fib_(n).  In other words, the Fibonacci numbers are
@@ -496,20 +496,25 @@
 ;; transformations, and thus we can compute T^n using successive squaring, as
 ;; in the `fast-expt' procedure.  Put this all together to complete the
 ;; following procedure, which runs in a logarithmic number of steps:(5)
-
-;;      (define (fib n)
-;;        (fib-iter 1 0 0 1 n))
-
-;;      (define (fib-iter a b p q count)
-;;        (cond ((= count 0) b)
-;;              ((even? count)
-;;               (fib-iter a
-;;                         b
-;;                         <??>      ; compute p'
-;;                         <??>      ; compute q'
-;;                         (/ count 2)))
-;;              (else (fib-iter (+ (* b q) (* a q) (* a p))
-;;                              (+ (* b p) (* a q))
-;;                              p
-;;                              q
-;;                              (- count 1)))))
+(defn fast-fib
+  "Return Fibonacci sequence in O(log n) time
+  http://community.schemewiki.org/?sicp-ex-1.19"
+  [n]
+  (if (neg? n)
+    0
+    (loop [a 1
+           b 0
+           p 0
+           q 1
+           rem n]
+      (cond (zero? rem) b
+            (even? rem) (recur a
+                               b
+                               (+ (c1-1/square p) (c1-1/square q))
+                               (+ (* 2 p q) (c1-1/square q))
+                               (/ rem 2))
+            :else (recur (+ (* b q) (* a q) (* a p))
+                         (+ (* b p) (* a q))
+                         p
+                         q
+                         (dec rem))))))
