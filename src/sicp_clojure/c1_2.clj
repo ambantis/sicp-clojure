@@ -605,3 +605,30 @@
 
 ;; Thus, for applicative-order-evaluation, rem is called 5 times, for
 ;; normal-order-evaluation, it is called 11 times.
+
+;;; 1.2.6 Example: Testing for Primality
+
+;; This section explores algorithms for checking the primality of an
+;; integer. One method has an order of growth of [theta]([sqrt] n) while the
+;; probabalistic method has an order of growth of [theta](`log' n).
+
+;; One way to test for primality is to find the number's divisors.
+
+(defn evenly-divisible? [a b]
+  (zero? (rem b a)))
+
+(defn find-divisor
+  "Beginning with 2, test whether n is divisible by the divisor
+  if yes, then return that number, else repeat test with next integer, stopping
+  when the square of the divisor exceeds n"
+  [n test-divisor]
+  (cond (> (c1-1/square test-divisor) n) n
+        (evenly-divisible? test-divisor n) test-divisor
+        :else (recur n
+                     (inc test-divisor))))
+
+(defn smallest-divisor [n]
+  (find-divisor n 2))
+
+(defn prime1? [n]
+  (= n (smallest-divisor n)))
