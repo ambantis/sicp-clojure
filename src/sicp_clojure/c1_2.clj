@@ -205,6 +205,14 @@
 (defn count-change [amount]
   (cc amount 5))
 
+
+(defn count-change2 [amount coins]
+  (let [[head & tail] coins]
+    (cond (zero? amount) 1
+          (or (neg? amount) (nil? head)) 0
+          :else (+ (count-change2 (- amount head) coins)
+                   (count-change2 amount tail)))))
+
 ;; The observation that a tree-recursive proces maybe highly inefficient but
 ;; often easy to specify and understand has let people to propose that one could
 ;; get the best of both worlds by designing a "smart compiler" that could
@@ -399,24 +407,10 @@
 (defn fast-exp-iterative [b n]
   (if (zero? n)
     1
-    (let [[extra start-exponent] (if (even? n)
-                                   [1 n]
-                                   [b (dec n)])]
-      (println "extra = " extra ", start-exp = " start-exponent)
-      (loop [acc b
-             rem start-exponent]
-        (println "looping acc = " acc ", rem = " rem)
-        (if (= rem 1)
-          (*' acc extra)
-          (recur (c1-1/square acc) (/ rem 2)))))))
-
-(defn fast-exp-iterative [b n]
-  (if (zero? n)
-    1
     (loop [acc b
            rem n
            extra 1]
-      (cond (= rem 1) (* acc extra)
+      (cond (zero? rem) (* acc extra)
             (even? rem) (recur (c1-1/square acc)
                                (/ rem 2)
                                extra)
@@ -496,6 +490,7 @@
 ;; transformations, and thus we can compute T^n using successive squaring, as
 ;; in the `fast-expt' procedure.  Put this all together to complete the
 ;; following procedure, which runs in a logarithmic number of steps:(5)
+
 (defn fast-fib
   "Return Fibonacci sequence in O(log n) time
   http://community.schemewiki.org/?sicp-ex-1.19"
@@ -632,3 +627,41 @@
 
 (defn prime1? [n]
   (= n (smallest-divisor n)))
+
+;; The end test for `prime1' is based on the fact that if n is not prime, then
+;; it must have a divisor less than or equal to the square root of n. This means
+;; that the algorithm need only test divisors between 1 and sqrt(n). Thus, the
+;; number of steps required to identify n as prime will have order of
+;; growth [theta](sqrt n)
+
+;; The [theta](`log' n) primality test is based on a result from number theory
+;; known as Format's Little Theorem.
+
+;; If n is a prime number and a is any positive integer less than n, then a
+;; raised to the nth power is congruent to a modulo n.
+
+;; Two numbers are said to be "contruent modulo" n if they both have the same
+;; remainder when divided by n. The remainder of a number a when divided by n is
+;; also referred to as the "remainder of" a "modulo" n, or simply as "modulo" n.
+
+;; if p is a prime number, then for an integer a, (a^p - a) is a multiple of p
+
+(defn myfermi-test [p a]
+  (zero? (rem (- (fast-exp-iterative a p)
+                 a)
+              p)))
+
+(defn expmod [base exp m]
+  (cond (zero? exp) 1
+        (even? exp) (rem (c1-1/square (expmod base (/ exp 2) m)) m)
+        :else (rem (* base (expmod base (dec exp) m)) m)))
+
+(defn fermat-test [n]
+  (let [a (rand-int n)]
+    (= (expmod a n n) a)))
+
+(defn fast-prime? [n times]
+  (cond (zero? times) true
+        (fermat-test n) (fast-prime? n
+                                     (dec times))
+        :else false))
